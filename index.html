@@ -1,0 +1,357 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>After Dark: Truth or Dare</title>
+<style>
+:root{
+  --bg:#140a10; --panel:#22121b; --panel2:#2d1824; --text:#f7e9ef; --muted:#b894a6;
+  --accent:#e2386f; --accent2:#ff8a3d; --line:#3d2230; --ok:#4fc38a;
+}
+*{box-sizing:border-box}
+body{margin:0;background:radial-gradient(circle at 50% -10%,#3a1428 0,var(--bg) 60%);color:var(--text);
+  font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;min-height:100vh}
+.wrap{max-width:560px;margin:0 auto;padding:20px 16px 48px}
+h1{font-size:30px;margin:8px 0 2px;letter-spacing:.5px}
+h1 span{background:linear-gradient(90deg,var(--accent),var(--accent2));-webkit-background-clip:text;background-clip:text;color:transparent}
+.sub{color:var(--muted);font-size:14px;margin:0 0 18px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:16px;margin-bottom:14px}
+.card h2{font-size:16px;margin:0 0 12px;color:var(--muted);text-transform:uppercase;letter-spacing:1px}
+label{font-size:12px;color:var(--muted);display:block;margin-bottom:4px}
+input,select,textarea{width:100%;background:var(--panel2);color:var(--text);border:1px solid var(--line);
+  border-radius:10px;padding:10px;font-size:15px;font-family:inherit}
+textarea{min-height:64px;resize:vertical}
+.row{display:grid;grid-template-columns:1fr 92px 120px 36px;gap:8px;align-items:end;margin-bottom:10px}
+@media(max-width:480px){.row{grid-template-columns:1fr 1fr;}.row .nm{grid-column:1/-1}.row .x{grid-column:1/-1}}
+button{font-family:inherit;font-size:15px;border:0;border-radius:12px;padding:12px 16px;cursor:pointer;color:var(--text);background:var(--panel2);border:1px solid var(--line)}
+button.primary{background:linear-gradient(90deg,var(--accent),var(--accent2));border:0;font-weight:700}
+button.x{padding:10px 0;color:var(--muted)}
+button:disabled{opacity:.4;cursor:not-allowed}
+.btns{display:flex;gap:10px;flex-wrap:wrap}
+.btns button{flex:1}
+.warn{color:var(--accent2);font-size:13px;margin:6px 0 0}
+.note{color:var(--muted);font-size:13px;line-height:1.45}
+.heat{display:flex;gap:8px}
+.heat button{flex:1;padding:10px 6px;font-size:14px}
+.heat button.on{border-color:var(--accent);background:#3a1428}
+.custom-list{list-style:none;padding:0;margin:10px 0 0}
+.custom-list li{display:flex;gap:8px;align-items:flex-start;padding:8px 0;border-top:1px solid var(--line);font-size:14px}
+.custom-list li span{flex:1}
+.tag{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px}
+.turn{text-align:center;margin:18px 0}
+.turn .who{font-size:34px;font-weight:800}
+.turn .tag{display:block;margin-bottom:6px}
+.big{display:flex;gap:12px;margin:20px 0}
+.big button{flex:1;padding:30px 10px;font-size:22px;font-weight:800;border-radius:18px}
+.big .t{background:#1f2a4a;border-color:#34477a}
+.big .d{background:linear-gradient(135deg,var(--accent),var(--accent2));border:0}
+.deal{background:var(--panel);border:1px solid var(--line);border-radius:20px;padding:26px 20px;text-align:center;min-height:180px;
+  display:flex;flex-direction:column;justify-content:center;animation:pop .25s ease-out}
+.deal .kind{font-size:13px;letter-spacing:3px;text-transform:uppercase;color:var(--accent2);margin-bottom:12px}
+.deal .text{font-size:22px;line-height:1.35;font-weight:600}
+.deal .text b{color:var(--accent)}
+@keyframes pop{from{transform:scale(.94);opacity:0}to{transform:none;opacity:1}}
+.order{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-top:8px}
+.order span{font-size:12px;padding:4px 10px;border-radius:999px;background:var(--panel2);color:var(--muted)}
+.order span.now{background:var(--accent);color:#fff}
+.hidden{display:none}
+.top-link{background:none;border:0;color:var(--muted);padding:6px 0;font-size:14px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<!-- SETUP -->
+<section id="setup">
+  <h1><span>After Dark</span></h1>
+  <p class="sub">Truth or dare for adults (18+). Anyone can pass on anything, any time.</p>
+
+  <div class="card">
+    <h2>Players</h2>
+    <div id="players"></div>
+    <button id="addPlayer">+ Add player</button>
+    <div id="matchInfo"></div>
+  </div>
+
+  <div class="card">
+    <h2>Heat</h2>
+    <div class="heat" id="heat">
+      <button data-l="1">Warm up</button>
+      <button data-l="2">Hot</button>
+      <button data-l="3">Hottest</button>
+    </div>
+    <p class="note" style="margin-top:10px">Cards come from your level and below, weighted towards your level. You can change heat mid-game.</p>
+  </div>
+
+  <div class="card">
+    <h2>Your own cards</h2>
+    <label>Type</label>
+    <select id="cType">
+      <option value="truth">Truth</option>
+      <option value="dare">Dare (just me)</option>
+      <option value="pair">Dare (with someone)</option>
+    </select>
+    <div style="height:8px"></div>
+    <label>Heat</label>
+    <select id="cLevel"><option value="1">Warm up</option><option value="2">Hot</option><option value="3" selected>Hottest</option></select>
+    <div style="height:8px"></div>
+    <label>Text, use {target} where the other player's name should go</label>
+    <textarea id="cText" placeholder="e.g. Kiss {target} on the neck for ten seconds."></textarea>
+    <div style="height:8px"></div>
+    <button id="addCard">Add card</button>
+    <p class="warn hidden" id="cardWarn"></p>
+    <ul class="custom-list" id="customList"></ul>
+  </div>
+
+  <button class="primary" id="start" style="width:100%;padding:16px;font-size:18px">Start game</button>
+</section>
+
+<!-- GAME -->
+<section id="game" class="hidden">
+  <div style="display:flex;justify-content:space-between;align-items:center">
+    <button class="top-link" id="back">← Setup</button>
+    <select id="heatLive" style="width:auto;padding:6px 10px;font-size:13px">
+      <option value="1">Warm up</option><option value="2">Hot</option><option value="3">Hottest</option>
+    </select>
+  </div>
+
+  <div class="turn">
+    <span class="tag">Your turn</span>
+    <div class="who" id="who"></div>
+    <div class="order" id="order"></div>
+  </div>
+
+  <div id="choose" class="big">
+    <button class="t" id="truthBtn">Truth</button>
+    <button class="d" id="dareBtn">Dare</button>
+  </div>
+
+  <div id="dealt" class="hidden">
+    <div class="deal">
+      <div class="kind" id="kind"></div>
+      <div class="text" id="text"></div>
+    </div>
+    <div class="btns" style="margin-top:14px" id="dealtBtns">
+      <button id="passBtn">Pass (forfeit)</button>
+      <button class="primary" id="doneBtn">Done, next player</button>
+    </div>
+  </div>
+</section>
+</div>
+
+<script>
+/* ---------- Card deck ----------
+   t: truth | dare.  l: 1 warm up, 2 hot, 3 hottest.
+   Any card containing {target} needs a second player, picked only from
+   people who are mutually attracted to the active player. */
+const DECK = [
+  // TRUTHS — warm up
+  {t:'truth',l:1,x:"What's the most embarrassing thing that's happened to you on a date?"},
+  {t:'truth',l:1,x:"Who was your first kiss, and was it any good?"},
+  {t:'truth',l:1,x:"What's the cheesiest chat-up line you've actually used, and did it work?"},
+  {t:'truth',l:1,x:"What's the first thing you notice about someone you fancy?"},
+  {t:'truth',l:1,x:"Have you ever had a crush on a friend's partner?"},
+  {t:'truth',l:1,x:"What's the worst date you've ever been on?"},
+  {t:'truth',l:1,x:"Rate {target}'s outfit tonight out of ten and justify the score."},
+  // TRUTHS — hot
+  {t:'truth',l:2,x:"What's your biggest turn-on?"},
+  {t:'truth',l:2,x:"What's the riskiest place you've ever kissed someone?"},
+  {t:'truth',l:2,x:"Describe your perfect night in with someone you fancy."},
+  {t:'truth',l:2,x:"Have you ever sent a photo you instantly regretted?"},
+  {t:'truth',l:2,x:"Who in this room would you most like to kiss?"},
+  {t:'truth',l:2,x:"What's your biggest turn-off in bed?"},
+  {t:'truth',l:2,x:"What do you find most attractive about {target}?"},
+  // TRUTHS — hottest
+  {t:'truth',l:3,x:"What's the wildest place you've ever had sex?"},
+  {t:'truth',l:3,x:"What's something you've always wanted to try in bed but never have?"},
+  {t:'truth',l:3,x:"Describe the best sex you've ever had in three words."},
+  {t:'truth',l:3,x:"Have you ever been caught in the act? Tell the story."},
+  {t:'truth',l:3,x:"What's your fantasy involving someone in this room? You don't have to name them."},
+  {t:'truth',l:3,x:"Most people you've kissed in a single night?"},
+  {t:'truth',l:3,x:"If you had one night with {target}, what's the first thing you'd do?"},
+  {t:'truth',l:3,x:"Which part of {target}'s body would you most like to kiss?"},
+
+  // DARES — warm up
+  {t:'dare',l:1,x:"Do your sexiest dance for 30 seconds to whatever's playing."},
+  {t:'dare',l:1,x:"Read your last sent message out loud in your most seductive voice."},
+  {t:'dare',l:1,x:"Speak only in a breathy whisper until your next turn."},
+  {t:'dare',l:1,x:"Give {target} a 30-second shoulder massage."},
+  {t:'dare',l:1,x:"Whisper something flirty in {target}'s ear."},
+  {t:'dare',l:1,x:"Kiss {target} on the cheek."},
+  {t:'dare',l:1,x:"Hit {target} with your best chat-up line. They score it out of ten."},
+  {t:'dare',l:1,x:"Hold hands with {target} until your next turn."},
+  // DARES — hot
+  {t:'dare',l:2,x:"Remove one item of clothing. Shoes and socks don't count."},
+  {t:'dare',l:2,x:"The group picks one item of your clothing for you to remove."},
+  {t:'dare',l:2,x:"Moan as convincingly as you can for ten seconds."},
+  {t:'dare',l:2,x:"Kiss {target} on the lips for five seconds."},
+  {t:'dare',l:2,x:"Sit on {target}'s lap until your next turn."},
+  {t:'dare',l:2,x:"Give {target} a 30-second lap dance."},
+  {t:'dare',l:2,x:"Kiss {target}'s neck."},
+  {t:'dare',l:2,x:"Let {target} remove one item of your clothing."},
+  {t:'dare',l:2,x:"Slow-dance with {target} for a full song, as close as you can get."},
+  {t:'dare',l:2,x:"Feed {target} something from the table, no hands allowed."},
+  // DARES — hottest
+  {t:'dare',l:3,x:"Play the next three rounds in your underwear."},
+  {t:'dare',l:3,x:"Remove two items of clothing, slowly."},
+  {t:'dare',l:3,x:"Make out with {target} for 30 seconds."},
+  {t:'dare',l:3,x:"Take a body shot off {target}. They choose the spot."},
+  {t:'dare',l:3,x:"Remove one item of {target}'s clothing using only your teeth."},
+  {t:'dare',l:3,x:"Go into another room with {target} for two minutes. What happens there stays there."},
+  {t:'dare',l:3,x:"Kiss {target} wherever they point."},
+  {t:'dare',l:3,x:"Let {target} blindfold you, then kiss you anywhere they like for 20 seconds."},
+  {t:'dare',l:3,x:"Trace a trail of kisses down {target}'s stomach, stopping at the waistband."},
+  {t:'dare',l:3,x:"Swap tops with {target}, right here, right now."},
+];
+
+const FORFEITS = [
+  "Take a drink.","Take two drinks.","Finish your drink.",
+  "Remove an item of clothing instead.","The group chooses your next dare.",
+  "Do ten squats while everyone counts.","Take a shot.","Your next turn has to be a dare."
+];
+
+/* ---------- State ---------- */
+const store = {
+  get(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}},
+  set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}
+};
+let players = store.get('tod_players',[
+  {name:'',sex:'m',likes:'f'},{name:'',sex:'f',likes:'m'}
+]);
+let custom = store.get('tod_custom',[]);
+let heat = store.get('tod_heat',2);
+let turn = 0;
+const used = new Set();
+
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const rand = a => a[Math.floor(Math.random()*a.length)];
+const likesSex = (likes,sex) => likes==='b' || likes===sex;
+const compat = (a,b) => a!==b && likesSex(a.likes,b.sex) && likesSex(b.likes,a.sex);
+const needsTarget = c => c.x.includes('{target}');
+const save = () => {store.set('tod_players',players);store.set('tod_custom',custom);store.set('tod_heat',heat)};
+
+/* ---------- Setup UI ---------- */
+function renderPlayers(){
+  $('players').innerHTML = players.map((p,i)=>`
+    <div class="row">
+      <div class="nm"><label>Name</label><input data-i="${i}" data-f="name" value="${esc(p.name)}" placeholder="Player ${i+1}"></div>
+      <div><label>Sex</label>
+        <select data-i="${i}" data-f="sex">
+          <option value="m"${p.sex==='m'?' selected':''}>Male</option>
+          <option value="f"${p.sex==='f'?' selected':''}>Female</option>
+        </select></div>
+      <div><label>Into</label>
+        <select data-i="${i}" data-f="likes">
+          <option value="m"${p.likes==='m'?' selected':''}>Men</option>
+          <option value="f"${p.likes==='f'?' selected':''}>Women</option>
+          <option value="b"${p.likes==='b'?' selected':''}>Both</option>
+        </select></div>
+      <button class="x" data-del="${i}" title="Remove" ${players.length<=2?'disabled':''}>✕</button>
+    </div>`).join('');
+  renderMatchInfo();
+}
+function renderMatchInfo(){
+  const named = players.filter(p=>p.name.trim());
+  const lonely = named.filter(p=>!players.some(q=>q.name.trim() && compat(p,q)));
+  $('matchInfo').innerHTML = lonely.length
+    ? `<p class="warn">No mutual match yet for ${lonely.map(p=>esc(p.name)).join(', ')}. They'll only get truths and solo dares.</p>`
+    : '';
+}
+$('players').addEventListener('input',e=>{
+  const i=e.target.dataset.i, f=e.target.dataset.f; if(i===undefined) return;
+  players[i][f]=e.target.value; save();
+  if(f!=='name') renderPlayers(); else renderMatchInfo();
+});
+$('players').addEventListener('click',e=>{
+  const d=e.target.dataset.del; if(d===undefined) return;
+  players.splice(+d,1); save(); renderPlayers();
+});
+$('addPlayer').onclick=()=>{players.push({name:'',sex:'m',likes:'f'});save();renderPlayers()};
+
+function renderHeat(){
+  document.querySelectorAll('#heat button').forEach(b=>b.classList.toggle('on',+b.dataset.l===heat));
+  $('heatLive').value=heat;
+}
+$('heat').onclick=e=>{if(e.target.dataset.l){heat=+e.target.dataset.l;save();renderHeat()}};
+$('heatLive').onchange=e=>{heat=+e.target.value;save();renderHeat()};
+
+function renderCustom(){
+  const names={truth:'Truth',dare:'Dare',pair:'Dare with someone'};
+  $('customList').innerHTML = custom.map((c,i)=>`
+    <li><span><span class="tag">${names[c.kind]} · heat ${c.l}</span><br>${esc(c.x)}</span>
+    <button class="x" data-cdel="${i}" style="width:36px">✕</button></li>`).join('');
+}
+$('addCard').onclick=()=>{
+  const kind=$('cType').value, x=$('cText').value.trim(), w=$('cardWarn');
+  w.classList.add('hidden');
+  if(!x) return;
+  if(kind==='pair' && !x.includes('{target}')){w.textContent="Paired dares need {target} somewhere in the text.";w.classList.remove('hidden');return}
+  if(kind!=='pair' && kind==='dare' && x.includes('{target}')){w.textContent="That card mentions {target}, so pick 'Dare (with someone)'.";w.classList.remove('hidden');return}
+  custom.push({kind,l:+$('cLevel').value,x}); $('cText').value=''; save(); renderCustom();
+};
+$('customList').onclick=e=>{const d=e.target.dataset.cdel;if(d!==undefined){custom.splice(+d,1);save();renderCustom()}};
+
+/* ---------- Game ---------- */
+const allCards = () => DECK.concat(custom.map(c=>({t:c.kind==='truth'?'truth':'dare',l:c.l,x:c.x})));
+const active = () => players.filter(p=>p.name.trim());
+let roster = [];
+
+$('start').onclick=()=>{
+  roster = active();
+  if(roster.length<2){alert('Add at least two named players.');return}
+  turn = 0; used.clear();
+  $('setup').classList.add('hidden'); $('game').classList.remove('hidden');
+  showTurn();
+};
+$('back').onclick=()=>{$('game').classList.add('hidden');$('setup').classList.remove('hidden');renderPlayers()};
+
+function showTurn(){
+  const me = roster[turn];
+  $('who').textContent = me.name;
+  $('order').innerHTML = roster.map((p,i)=>`<span class="${i===turn?'now':''}">${esc(p.name)}</span>`).join('');
+  $('choose').classList.remove('hidden'); $('dealt').classList.add('hidden');
+  $('dealtBtns').innerHTML = `<button id="passBtn">Pass (forfeit)</button><button class="primary" id="doneBtn">Done, next player</button>`;
+  $('passBtn').onclick=pass; $('doneBtn').onclick=next;
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function draw(type){
+  const me = roster[turn];
+  const partners = roster.filter(p=>compat(me,p));
+  const pool = allCards().filter(c=>c.t===type && c.l<=heat && (!needsTarget(c)||partners.length));
+  if(!pool.length){show(type,"No cards left at this heat. Try another level or add your own.");return}
+  const key = c => c.t+'|'+c.x;
+  let fresh = pool.filter(c=>!used.has(key(c)));
+  if(!fresh.length){pool.forEach(c=>used.delete(key(c))); fresh=pool}
+  const top = fresh.filter(c=>c.l===heat);
+  const card = rand(top.length && Math.random()<0.65 ? top : fresh);
+  used.add(key(card));
+  let html = esc(card.x);
+  if(needsTarget(card)){
+    const target = rand(partners);
+    html = html.replace(/\{target\}/g,`<b>${esc(target.name)}</b>`);
+  }
+  show(type, html, true);
+}
+function show(type, html, isHtml){
+  $('kind').textContent = type==='truth'?'Truth':'Dare';
+  $('text').innerHTML = isHtml?html:esc(html);
+  $('choose').classList.add('hidden'); $('dealt').classList.remove('hidden');
+  const d=document.querySelector('.deal'); d.style.animation='none'; d.offsetHeight; d.style.animation='';
+}
+function pass(){
+  $('kind').textContent='Forfeit';
+  $('text').textContent=rand(FORFEITS);
+  $('dealtBtns').innerHTML=`<button class="primary" id="doneBtn" style="flex:1">Next player</button>`;
+  $('doneBtn').onclick=next;
+}
+function next(){turn=(turn+1)%roster.length;showTurn()}
+$('truthBtn').onclick=()=>draw('truth');
+$('dareBtn').onclick=()=>draw('dare');
+
+renderPlayers(); renderHeat(); renderCustom();
+</script>
+</body>
+</html>
